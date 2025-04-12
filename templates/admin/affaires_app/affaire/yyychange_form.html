@@ -1,0 +1,155 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+
+{% block submit_buttons_bottom %}
+    {{ block.super }}
+    
+    {% if original %}
+        <div class="submit-row" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+            <h3>Changer le statut de l'affaire</h3>
+            
+            <style>
+                .status-buttons {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    margin-bottom: 15px;
+                }
+                .status-button {
+                    padding: 8px 15px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    text-align: center;
+                    font-weight: bold;
+                    border: none;
+                }
+                .status-button-BROUILLON {
+                    background-color: #f8f9fa;
+                    color: #212529;
+                }
+                .status-button-VALIDE {
+                    background-color: #cff4fc;
+                    color: #055160;
+                }
+                .status-button-EN_COURS {
+                    background-color: #d1e7dd;
+                    color: #0f5132;
+                }
+                .status-button-EN_PAUSE {
+                    background-color: #fff3cd;
+                    color: #664d03;
+                }
+                .status-button-TERMINEE {
+                    background-color: #198754;
+                    color: white;
+                }
+                .status-button-ANNULEE {
+                    background-color: #dc3545;
+                    color: white;
+                }
+                .status-form {
+                    display: none;
+                    margin-top: 15px;
+                    padding: 15px;
+                    background-color: #f8f9fa;
+                    border-radius: 4px;
+                }
+                .status-form.active {
+                    display: block;
+                }
+            </style>
+            
+            <div class="status-buttons">
+                {% for status_value, status_label in original.STATUT_CHOICES %}
+                    {% if status_value != original.statut %}
+                        <button type="button" class="status-button status-button-{{ status_value }}" 
+                                onclick="showStatusForm('{{ status_value }}')">
+                            {{ status_label }}
+                        </button>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            
+            {% for status_value, status_label in original.STATUT_CHOICES %}
+                {% if status_value != original.statut %}
+                    <div id="status-form-{{ status_value }}" class="status-form">
+                        <form method="post" action="{% url 'admin:affaire-changer-statut' original.pk status_value %}">
+                            {% csrf_token %}
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="commentaire-{{ status_value }}">Commentaire:</label>
+                                    <textarea name="commentaire" id="commentaire-{{ status_value }}" rows="3" cols="80" 
+                                              class="vLargeTextField"></textarea>
+                                </div>
+                            </div>
+                            
+                            {% if status_value == 'TERMINEE' %}
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="date-{{ status_value }}">Date de terminaison:</label>
+                                    <input type="datetime-local" name="date_specifique" id="date-{{ status_value }}" 
+                                           class="vDateField" required>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="form-row" style="margin-top: 10px;">
+                                <input type="submit" value="Confirmer le changement de statut" class="default">
+                                <button type="button" class="closeButton" onclick="hideStatusForm('{{ status_value }}')">
+                                    Annuler
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            
+            <script>
+                function showStatusForm(status) {
+                    // Cacher tous les formulaires
+                    document.querySelectorAll('.status-form').forEach(form => {
+                        form.classList.remove('active');
+                    });
+                    
+                    // Afficher le formulaire demandé
+                    document.getElementById('status-form-' + status).classList.add('active');
+                }
+                
+                function hideStatusForm(status) {
+                    document.getElementById('status-form-' + status).classList.remove('active');
+                }
+            </script>
+        </div>
+        
+        <div class="submit-row" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+            <h3>Historique des statuts</h3>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Ancien statut</th>
+                        <th>Nouveau statut</th>
+                        <th>Utilisateur</th>
+                        <th>Commentaire</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for change in original.get_status_history %}
+                        <tr>
+                            <td>{{ change.date_changement|date:"d/m/Y H:i" }}</td>
+                            <td>{{ change.ancien_statut }}</td>
+                            <td>{{ change.nouveau_statut }}</td>
+                            <td>{{ change.utilisateur.get_full_name|default:change.utilisateur.username }}</td>
+                            <td>{{ change.commentaire|truncatechars:50 }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5">Aucun historique disponible</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+{% endblock %}
