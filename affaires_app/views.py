@@ -69,28 +69,31 @@ class AffaireViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def change_statut(self, request, pk=None):
         """
-        Change le statut d'une affaire.
+        Change le statut d'une affaire avec possibilité de spécifier une date.
         """
         affaire = self.get_object()
         serializer = self.get_serializer(data=request.data)
-        
+
         if serializer.is_valid():
             nouveau_statut = serializer.validated_data['statut']
             commentaire = serializer.validated_data.get('commentaire', '')
-            
+            date_specifique = serializer.validated_data.get('date_specifique')
+
             # Appel de la méthode du modèle pour changer le statut
-            affaire.mettre_a_jour_statut(
+            affaire.changer_statut(
                 nouveau_statut=nouveau_statut,
-                utilisateur=request.user,
-                commentaire=commentaire
+                user=request.user,
+                commentaire=commentaire,
+                date_specifique=date_specifique  # Ajout de la date spécifique
             )
-            
+
             return Response({
                 'success': True,
                 'statut': nouveau_statut,
+                'date_changement': date_specifique,
                 'message': f"Statut de l'affaire mis à jour vers '{nouveau_statut}'"
             })
-        
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=['get'])

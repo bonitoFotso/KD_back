@@ -6,8 +6,8 @@ from django.contrib.auth import get_user_model
 from datetime import timedelta
 
 from affaires_app.models import Affaire
-from document.models import StatusTrackingModel
 from proformas_app.models import Proforma
+from status_traking.models import StatusTrackingModel
 
 
 User = get_user_model()

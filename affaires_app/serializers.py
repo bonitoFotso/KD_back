@@ -102,7 +102,7 @@ class AffaireSerializer(serializers.ModelSerializer):
         return False
 
 
-class AffaireDetailSerializer(AffaireSerializer):
+class AffaireDetailSerializer(serializers.ModelSerializer):
     """Sérialiseur détaillé pour une affaire spécifique."""
     offre = OffreSerializer(read_only=True)
     created_by = UserBasicSerializer(read_only=True)
@@ -117,13 +117,27 @@ class AffaireDetailSerializer(AffaireSerializer):
         source='get_montant_restant_a_payer',
         max_digits=10, decimal_places=2, read_only=True
     )
-    
-    class Meta(AffaireSerializer.Meta):
-        fields = AffaireSerializer.Meta.fields + [
+    en_retard = serializers.SerializerMethodField()
+    class Meta:
+        model = Affaire
+        fields = [
+            'id', 'reference', 'offre',
+            'date_debut', 'date_fin_prevue', 'date_fin_reelle',
+            'statut', 'responsable',
+            'montant_total', 'montant_facture', 'montant_paye',
+            'en_retard',
+            'date_creation', 'date_modification',
             'created_by', 'notes',
             'rapports', 'factures',
             'montant_restant_a_facturer', 'montant_restant_a_payer'
         ]
+        
+    def get_en_retard(self, obj):
+        """Détermine si l'affaire est en retard."""
+        if obj.statut == 'EN_COURS' and obj.date_fin_prevue and obj.date_fin_prevue < now():
+            return True
+        return False
+
 
 
 class AffaireCreateSerializer(serializers.ModelSerializer):
@@ -182,6 +196,7 @@ class ChangeStatutSerializer(serializers.Serializer):
     """Sérialiseur pour le changement de statut d'une affaire."""
     statut = serializers.ChoiceField(choices=Affaire.STATUT_CHOICES)
     commentaire = serializers.CharField(required=False, allow_blank=True)
+    date_specifique = serializers.DateTimeField(required=False)
     
     def validate(self, data):
         """Validation des transitions de statut autorisées."""
@@ -206,8 +221,12 @@ class ChangeStatutSerializer(serializers.Serializer):
         
         # Vérifications spécifiques au statut
         if nouveau_statut == 'TERMINEE' and not affaire.date_fin_reelle:
-            # On pourrait automatiquement définir la date de fin réelle ici
-            data['date_fin_reelle'] = now()
+            # Si la date spécifique est fournie, on l'utilise pour la date de fin réelle
+            if 'date_specifique' in data:
+                pass  # La date sera utilisée directement dans le modèle
+            else:
+                # On pourrait automatiquement définir la date de fin réelle ici
+                data['date_specifique'] = now()
         
         return data
 

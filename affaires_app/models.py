@@ -8,8 +8,8 @@ from django.db import transaction
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 
-from document.models import StatusTrackingModel
 from factures_app.models import Facture
+from status_traking.models import StatusTrackingModel
 
 
 class Affaire(StatusTrackingModel):
@@ -205,21 +205,59 @@ class Affaire(StatusTrackingModel):
     def changer_statut(self, nouveau_statut, user=None, date_specifique=None, commentaire="", metadata=None):
         """
         Change le statut de l'affaire avec des actions spécifiques selon le statut
+
+        Args:
+            nouveau_statut (str): Le nouveau statut à appliquer
+            user (User): L'utilisateur effectuant le changement
+            date_specifique (datetime): Date spécifique pour le changement (optionnel)
+            commentaire (str): Commentaire expliquant le changement
+            metadata (dict): Métadonnées supplémentaires pour le changement
+
+        Returns:
+            bool: True si le statut a été changé, False sinon
         """
         # Vérifier si le statut change réellement
         if self.statut == nouveau_statut:
             return False
-        
+
         # Sauvegarder l'ancien statut
         ancien_statut = self.statut
-        
+
+        # Préparation des métadonnées si non fournies
+        if metadata is None:
+            metadata = {}
+
+        # Ajout de la date spécifique aux métadonnées pour traçabilité
+        if date_specifique:
+            metadata['date_changement_specifique'] = date_specifique.isoformat()
+
         # Actions spécifiques selon le nouveau statut
-        if nouveau_statut == 'TERMINEE' and not self.date_fin_reelle:
-            self.date_fin_reelle = date_specifique or now()
-        
+        if nouveau_statut == 'TERMINEE':
+            # Mise à jour de la date de fin réelle si nécessaire
+            if not self.date_fin_reelle:
+                self.date_fin_reelle = date_specifique or now()
+                # Ajouter aux métadonnées pour traçabilité
+                metadata['date_fin_reelle'] = self.date_fin_reelle.isoformat()
+
+        elif nouveau_statut == 'EN_COURS':
+            # Actions à effectuer quand une affaire passe en cours
+            # Par exemple, mise à jour de la date de début effective si non définie
+            if not self.date_debut_effective:
+                self.date_debut_effective = date_specifique or now()
+                metadata['date_debut_effective'] = self.date_debut_effective.isoformat()
+
+        elif nouveau_statut == 'ANNULEE':
+            # Actions spécifiques à l'annulation
+            self.date_annulation = date_specifique or now()
+            metadata['date_annulation'] = self.date_annulation.isoformat()
+
+            # On pourrait aussi ajouter la raison d'annulation si fournie dans les métadonnées
+            if 'raison_annulation' in metadata:
+                self.raison_annulation = metadata['raison_annulation']
+
         # Stocker cet ancien statut pour utilisation dans les signaux
         self._old_statut = ancien_statut
-        
+
         # Utiliser la méthode de la classe parent pour changer le statut avec historique
         changed = self.set_status(
             nouveau_statut,
@@ -228,12 +266,34 @@ class Affaire(StatusTrackingModel):
             commentaire=commentaire,
             metadata=metadata
         )
-        
-        if changed and nouveau_statut == 'VALIDE' and ancien_statut != 'VALIDE':
-            # Initialiser le projet si on passe à VALIDE
-            self.initialiser_projet()
-        
+
+        # Actions post-changement de statut
+        if changed:
+            # Initialiser le projet si on passe à VALIDE depuis un autre statut
+            if nouveau_statut == 'VALIDE' and ancien_statut != 'VALIDE':
+                self.initialiser_projet()
+
+            # Mise à jour des dates de l'affaire en fonction du nouveau statut
+            self._update_affaire_dates(nouveau_statut, date_specifique)
+
+            # Enregistrer les changements
+            self.save(update_fields=['date_fin_reelle', 'date_debut_effective', 'date_annulation'])
+
         return changed
+
+    def _update_affaire_dates(self, nouveau_statut, date_specifique=None):
+        """Méthode utilitaire pour mettre à jour les dates de l'affaire selon le statut"""
+        current_date = date_specifique or now()
+
+        # Mise à jour des dates selon le statut
+        if nouveau_statut == 'VALIDE' and not hasattr(self, 'date_validation'):
+            self.date_validation = current_date
+        elif nouveau_statut == 'EN_COURS' and not hasattr(self, 'date_debut_effective'):
+            self.date_debut_effective = current_date
+        elif nouveau_statut == 'TERMINEE' and not self.date_fin_reelle:
+            self.date_fin_reelle = current_date
+        elif nouveau_statut == 'ANNULEE' and not hasattr(self, 'date_annulation'):
+            self.date_annulation = current_date
     
     @transaction.atomic
     def initialiser_projet(self):
