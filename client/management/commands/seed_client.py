@@ -12,7 +12,7 @@ class CameroonSeeder:
         
     @transaction.atomic
     def seed(self):
-        #self.seed_susers()
+        self.seed_susers()
         self.seed_cameroon()
         self.seed_regions()
         self.seed_cities()
@@ -20,9 +20,9 @@ class CameroonSeeder:
         self.seed_companies()
         self.seed_contacts()  # Ajout de la nouvelle méthode
         
-    #def seed_susers(self):
-    #    User.objects.create_superuser(email="r@r.com", password="2016", username="root")
-    #    print("✓ Superutilisateur créé")
+    def seed_susers(self):
+        User.objects.create_superuser(email="r@r.com", password="2016", username="root")
+        print("✓ Superutilisateur créé")
         
     def seed_cameroon(self):
         self.pays = Pays.objects.create(
