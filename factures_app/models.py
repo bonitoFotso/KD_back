@@ -74,7 +74,7 @@ class Facture(models.Model):
             date = self.date_creation or now()
             
             # Générer la référence avec le format spécifié
-            self.reference = f"{self.affaire.offre.entity.code}/FAC/{self.affaire.offre.client.c_num}/{self.affaire.reference}/{self.affaire.offre.produit_principale.code}/{total_factures_client}/{self.sequence_number:04d}"
+            self.reference = f"{self.affaire.offre.entity.code}/FAC/{self.affaire.offre.client.c_num}/{self.affaire.reference}/{self.affaire.offre.produit_principal.code}/{total_factures_client}/{self.sequence_number:04d}"
         
         # Mettre à jour les dates en fonction du statut
         if self.statut == 'EMISE' and not self.date_emission:

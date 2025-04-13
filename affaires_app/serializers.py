@@ -196,7 +196,7 @@ class ChangeStatutSerializer(serializers.Serializer):
     """Sérialiseur pour le changement de statut d'une affaire."""
     statut = serializers.ChoiceField(choices=Affaire.STATUT_CHOICES)
     commentaire = serializers.CharField(required=False, allow_blank=True)
-    date_specifique = serializers.DateTimeField(required=False)
+    dateChangement = serializers.DateTimeField(required=False)
     
     def validate(self, data):
         """Validation des transitions de statut autorisées."""
@@ -229,6 +229,19 @@ class ChangeStatutSerializer(serializers.Serializer):
                 data['date_specifique'] = now()
         
         return data
+    
+class AssignerResponsableSerializer(serializers.Serializer):
+    """Sérialiseur pour l'assignation d'un responsable"""
+    responsable_id = serializers.IntegerField(required=True)
+    commentaire = serializers.CharField(required=False, allow_blank=True)
+    
+    def validate_responsable_id(self, value):
+        """Valide que l'utilisateur existe"""
+        try:
+            User.objects.get(pk=value)
+            return value
+        except User.DoesNotExist:
+            raise serializers.ValidationError("L'utilisateur spécifié n'existe pas.")
 
 
 class DashboardSerializer(serializers.Serializer):
