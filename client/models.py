@@ -2,6 +2,7 @@ from django.db import models
 
 from django.core.validators import RegexValidator
 from django.utils.timezone import now
+from django.utils import timezone
 
 from django.conf import settings
 from django.db import models
@@ -81,7 +82,9 @@ class Categorie(models.Model):
 
     def __str__(self):
         return self.nom
-
+    
+class Entreprise(models.Model):
+    """Représente une entreprise avec laquelle vous pouvez avoir différents types de relations"""
 
 class Client(AuditableMixin, models.Model):
     nom = models.CharField(max_length=255)
@@ -128,6 +131,10 @@ class Client(AuditableMixin, models.Model):
             ).count() + 1
             self.c_num = f"c{str(now().year)[-2:]}{now().month:02d}{now().day:02d}{last_client:04d}"
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.nom} ({self.statut})"
+
 
 class Site(AuditableMixin, models.Model):
     nom = models.CharField(max_length=255)
@@ -232,3 +239,108 @@ class Contact(models.Model):
     class Meta:
         verbose_name = "Contact"
         verbose_name_plural = "Contacts"
+        
+        
+class Agreement(models.Model):
+    """Gère les relations d'agreement entre entreprises et entités avec historique"""
+
+    entreprise = models.ForeignKey(
+        Entreprise, on_delete=models.CASCADE, related_name="agreements"
+    )
+    entite = models.ForeignKey(
+        'document.Entity', on_delete=models.CASCADE, related_name="agreements"
+    )
+    date_debut = models.DateField()
+    date_fin = models.DateField(blank=True, null=True)
+    est_actif = models.BooleanField(default=True)
+
+    # Workflow de demande et validation
+    STATUT_CHOICES = [
+        ("DEMANDE", "Demande en cours"),
+        ("EN_REVUE", "En cours de revue"),
+        ("VALIDE", "Validé"),
+        ("REJETE", "Rejeté"),
+        ("EXPIRE", "Expiré"),
+        ("RENOUVELLEMENT", "En attente de renouvellement"),
+    ]
+    statut_workflow = models.CharField(
+        max_length=20, choices=STATUT_CHOICES, default="DEMANDE"
+    )
+    date_statut = models.DateField(auto_now=True)
+    commentaires = models.TextField(blank=True, null=True)
+
+    # Suivi des modifications
+    cree_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="agreements_crees"
+    )
+    modifie_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="agreements_modifies"
+    )
+
+    class Meta:
+        unique_together = ("entreprise", "entite", "date_debut")
+
+    def __str__(self):
+        return f"Agreement {self.entreprise.nom} - {self.entite.nom} ({self.get_statut_workflow_display()})"
+
+    def est_a_renouveler(self, jours_avant=30):
+        """Vérifie si l'agreement doit être renouvelé dans les X jours"""
+        if not self.date_fin:
+            return False
+        today = timezone.now().date()
+        return self.est_actif and (self.date_fin - today).days <= jours_avant
+
+
+
+
+class TypeInteraction(models.Model):
+    """Types d'interactions possibles avec paramètres personnalisables"""
+
+    nom = models.CharField(max_length=50)
+    description = models.TextField(blank=True, null=True)
+    couleur = models.CharField(
+        max_length=20, blank=True, null=True, help_text="Code couleur pour l'interface"
+    )
+
+    def __str__(self):
+        return self.nom
+
+
+class Interaction(models.Model):
+    """Pour suivre les interactions avec les contacts et entreprises"""
+
+    date = models.DateTimeField()
+    date_creation = models.DateTimeField(auto_now_add=True)
+    type_interaction = models.ForeignKey(TypeInteraction, on_delete=models.PROTECT)
+    titre = models.CharField(max_length=200)
+    notes = models.TextField(blank=True, null=True)
+
+    # Rendez-vous et relances
+    est_rendez_vous = models.BooleanField(default=False)
+    duree_minutes = models.PositiveIntegerField(blank=True, null=True)
+
+    # Relance
+    date_relance = models.DateField(blank=True, null=True)
+    relance_effectuee = models.BooleanField(default=False)
+
+    # Relations
+    contact = models.ForeignKey(
+        Contact, on_delete=models.CASCADE, related_name="interactions"
+    )
+    entreprise = models.ForeignKey(
+        Entreprise, on_delete=models.CASCADE, related_name="interactions"
+    )
+    entite = models.ForeignKey(
+        'document.Entity', on_delete=models.CASCADE, related_name="interactions"
+    )
+
+    # Utilisateur ayant créé l'interaction
+    cree_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="interactions_creees"
+    )
+
+    class Meta:
+        ordering = ["-date"]
+
+    def __str__(self):
+        return f"{self.type_interaction} avec {self.contact} le {self.date.strftime('%d/%m/%Y')}"
