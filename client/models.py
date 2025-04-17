@@ -86,6 +86,83 @@ class Categorie(models.Model):
 class Entreprise(models.Model):
     """Représente une entreprise avec laquelle vous pouvez avoir différents types de relations"""
 
+    nom = models.CharField(max_length=100)
+    adresse = models.TextField(blank=True, null=True)
+    telephone = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    site_web = models.URLField(blank=True, null=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    c_num = models.CharField(max_length=10, blank=True, null=True)
+    ville = models.ForeignKey(Ville, on_delete=models.CASCADE, blank=True, null=True)
+    
+    # Nouveaux champs
+    secteur_activite = models.CharField(max_length=255, blank=True, null=True, verbose_name="Secteur d'activité")
+    categorie = models.ForeignKey(Categorie, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Catégorie")
+    address = models.TextField(blank=True, null=True, verbose_name="Adresse")
+    bp = models.CharField(max_length=20, blank=True, null=True, verbose_name="Boîte Postale")
+    quartier = models.CharField(max_length=255, blank=True, null=True, verbose_name="Quartier")
+    matricule = models.CharField(max_length=20, blank=True, null=True, verbose_name="Matricule")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="entreprises_created"
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="entreprises_updated"
+    )
+    # Relations
+    est_client = models.BooleanField(
+        default=False, help_text="Indique si l'entreprise est un client actif"
+    )
+    date_conversion_client = models.DateField(
+        blank=True, null=True, help_text="Date de conversion de prospect à client"
+    )
+    entites_agreement = models.ManyToManyField(
+        'document.Entity',
+        through="Agreement",
+        blank=True,
+        help_text="Entités avec lesquelles cette entreprise a un accord",
+    )
+
+    @property
+    def est_prospect(self):
+        """Une entreprise est un prospect si elle n'est pas client"""
+        return not self.est_client
+
+    @property
+    def est_agree(self):
+        """Une entreprise est agréée si elle a au moins un accord avec une entité"""
+        return self.entites_agreement.exists()
+
+    @property
+    def statut(self):
+        """Retourne le statut de l'entreprise selon votre logique métier"""
+        if self.est_client:
+            if self.est_agree:
+                return "Client Agréé"
+            return "Client"
+        else:
+            if self.est_agree:
+                return "Prospect Agréé"
+            return "Prospect"
+        
+    def save(self, *args, **kwargs):
+        if not self.c_num:
+            last_client = Entreprise.objects.filter(
+                created_at__year=now().year
+            ).count() + 1
+            self.c_num = f"c{str(now().year)[-2:]}{now().month:02d}{now().day:02d}{last_client:04d}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.nom} ({self.statut})"
 class Client(AuditableMixin, models.Model):
     nom = models.CharField(max_length=255)
     email = models.EmailField(blank=True, null=True)
@@ -132,8 +209,6 @@ class Client(AuditableMixin, models.Model):
             self.c_num = f"c{str(now().year)[-2:]}{now().month:02d}{now().day:02d}{last_client:04d}"
         super().save(*args, **kwargs)
 
-    def __str__(self):
-        return f"{self.nom} ({self.statut})"
 
 
 class Site(AuditableMixin, models.Model):
