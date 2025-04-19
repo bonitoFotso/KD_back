@@ -6,7 +6,7 @@ from factures_app.models import Facture
 from offres_app.models import Offre
 from proformas_app.models import Proforma
 from .models import (
-    Entity, Client, Category, Product, 
+    Entity, Client, Departement, Product, 
  Rapport, Formation, Participant, AttestationFormation
 )
 
@@ -58,24 +58,24 @@ class CategoryListSerializer(serializers.ModelSerializer):
     entity_name = serializers.CharField(source='entity.name', read_only=True)
     
     class Meta:
-        model = Category
+        model = Departement
         fields = ['id', 'code', 'name', 'entity_name']
 
-class CategoryDetailSerializer(serializers.ModelSerializer):
+class DepartementDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Category
+        model = Departement
         fields = '__all__'
 
 # Product Serializers
 class ProductListSerializer(serializers.ModelSerializer):
-    category_name = serializers.CharField(source='category.name', read_only=True)
-    categoryId = serializers.IntegerField(source='category.id', read_only=True)
+    departement = serializers.CharField(source='departement.name', read_only=True)
     
     class Meta:
         model = Product
-        fields = ['id', 'code', 'name', 'category_name', 'categoryId']
+        fields = ['id', 'code', 'name', 'departement',]
 
 class ProductDetailSerializer(serializers.ModelSerializer):
+    departement = DepartementDetailSerializer(read_only=True)
     class Meta:
         model = Product
         fields = '__all__'
@@ -239,10 +239,10 @@ class ClientEditSerializer(serializers.ModelSerializer):
         model = Client
         fields = '__all__'
 
-# Category Edit Serializer
-class CategoryEditSerializer(serializers.ModelSerializer):
+# Departement Edit Serializer
+class DepartementEditSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Category
+        model = Departement
         fields = '__all__'
 
 # Product Edit Serializer

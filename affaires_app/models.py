@@ -130,21 +130,21 @@ class Affaire(StatusTrackingModel):
     montant_total = models.DecimalField(
         max_digits=20,
         decimal_places=2,
-        default=Decimal("0"),
+        default=Decimal('0.00'),
         verbose_name="Montant total",
         help_text="Montant total de l'affaire (HT)",
     )
     montant_facture = models.DecimalField(
         max_digits=20,
         decimal_places=2,
-        default=Decimal("0"),
+        default=Decimal('0.00'),
         verbose_name="Montant facturé",
         help_text="Montant total facturé (HT)",
     )
     montant_paye = models.DecimalField(
         max_digits=20,
         decimal_places=2,
-        default=Decimal("0"),
+        default=Decimal('0.00'),
         verbose_name="Montant payé",
         help_text="Montant total payé (HT)",
     )

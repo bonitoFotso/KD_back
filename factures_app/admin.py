@@ -6,7 +6,7 @@ from .models import Facture
 
 @admin.register(Facture)
 class FactureAdmin(admin.ModelAdmin):
-    list_display = ('reference', 'affaire_link', 'client_display', 'montant_ttc_display', 
+    list_display = ('reference', 'affaire_link', 'montant_ttc_display', 
                     'statut_display', 'date_creation', 'date_echeance', 'est_en_retard_display')
     list_filter = ('statut', 'date_creation', 'date_emission', 'date_echeance', 'date_paiement')
     search_fields = ('reference', 'affaire__reference', 'affaire__offre__client__nom', 'notes')
@@ -52,12 +52,12 @@ class FactureAdmin(admin.ModelAdmin):
     affaire_link.short_description = 'Affaire'
     affaire_link.admin_order_field = 'affaire__reference'
     
-    def client_display(self, obj):
-        client = obj.affaire.offre.client
-        url = reverse('admin:clients_app_client_change', args=[client.id])
-        return format_html('<a href="{}">{}</a>', url, client.nom)
-    client_display.short_description = 'Client'
-    client_display.admin_order_field = 'affaire__offre__client__nom'
+    #def client_display(self, obj):
+    #    client = obj.affaire.offre.client
+    #    url = reverse('admin:clients_app_client_change', args=[client.id])
+    #    return format_html('<a href="{}">{}</a>', url, client.nom)
+    #client_display.short_description = 'Client'
+    #client_display.admin_order_field = 'affaire__offre__client__nom'
     
     def montant_ttc_display(self, obj):
         return f"{obj.montant_ttc:,.2f} XAF"

@@ -82,7 +82,7 @@ class Entity(AuditableMixin, models.Model):
 
 
 
-class Category(AuditableMixin, models.Model):
+class Departement(AuditableMixin, models.Model):
     code = models.CharField(
         max_length=3,
         validators=[RegexValidator(regex='^[A-Z]{3}$')]
@@ -100,7 +100,7 @@ class Product(AuditableMixin, models.Model):
         validators=[RegexValidator(regex=r'^(VTE|EC)\d+$')]
     )
     name = models.CharField(max_length=100)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="produits")
+    departement = models.ForeignKey(Departement, on_delete=models.CASCADE, related_name="produits")
 
     def __str__(self):
         return self.name
@@ -201,7 +201,7 @@ class Rapport(Document):
                 ).aggregate(Max('sequence_number'))['sequence_number__max']
                 self.sequence_number = (last_sequence or 0) + 1
             total_rapports_client = Rapport.objects.filter(client=self.affaire.offre.client).count() + 1
-            total_category_rapports = Rapport.objects.filter(client=self.affaire.offre.client,produit__category=self.produit.category).count() + 1
+            total_category_rapports = Rapport.objects.filter(client=self.affaire.offre.client,produit__category=self.produit.departement).count() + 1
             date = self.date_creation or now()
             self.reference = f"{self.entity.code}/RAP/{self.client.c_num}/{self.affaire.reference}/{total_category_rapports}/{self.produit.code}/{total_rapports_client}/{self.sequence_number:04d}"
         super().save(*args, **kwargs)

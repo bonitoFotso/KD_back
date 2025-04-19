@@ -19,10 +19,10 @@ class EntitySerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     """Sérialiseur pour les produits"""
-    category = serializers.StringRelatedField(source='category.name', read_only=True)
+    departement = serializers.StringRelatedField(source='departement.name', read_only=True)
     class Meta:
         model = Product
-        fields = ['id', 'code', 'category', 'name']
+        fields = ['id', 'code', 'departement', 'name']
 
 
 class ContactSerializer(serializers.ModelSerializer):

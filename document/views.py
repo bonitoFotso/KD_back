@@ -12,14 +12,14 @@ from offres_app.models import Offre
 from proformas_app.models import Proforma
 
 from .models import (
-    Entity, Category, Product, 
+    Departement, Entity, Product, 
     Rapport, Formation, 
     Participant, AttestationFormation
 )
 
 from .serializers import (
-    EntityListSerializer, EntityDetailSerializer, EntityEditSerializer,
-    CategoryListSerializer, CategoryDetailSerializer, CategoryEditSerializer,
+    DepartementDetailSerializer, EntityListSerializer, EntityDetailSerializer, EntityEditSerializer,
+    CategoryListSerializer,
     ProductListSerializer, ProductDetailSerializer, ProductEditSerializer,
     OffreListSerializer, OffreDetailSerializer, OffreEditSerializer,
     ProformaListSerializer, ProformaDetailSerializer, ProformaEditSerializer,
@@ -40,42 +40,36 @@ class EntityViewSet(viewsets.ModelViewSet):
     ordering_fields = ['code', 'name']
 
     def get_serializer_class(self):
+        print(f"Action: {self.action}")
         if self.action == 'list':
             return EntityListSerializer
         elif self.action in ['create', 'update', 'partial_update']:
             return EntityEditSerializer
         return EntityDetailSerializer
 
-class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['entity']
-    search_fields = ['code', 'name', 'entity__name']
+class DepartementViewSet(viewsets.ModelViewSet):
+    queryset = Departement.objects.all()
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['code', 'name']
     ordering_fields = ['code', 'name']
 
     def get_serializer_class(self):
         if self.action == 'list':
-            return CategoryListSerializer
+            return DepartementDetailSerializer
         elif self.action in ['create', 'update', 'partial_update']:
-            return CategoryEditSerializer
-        return CategoryDetailSerializer
-
-    @action(detail=True, methods=['get'])
-    def products(self, request, pk=None):
-        """Retourne les produits d'une catégorie."""
-        category = self.get_object()
-        products = Product.objects.filter(category=category)
-        serializer = ProductListSerializer(products, many=True)
-        return Response(serializer.data)
+            return DepartementDetailSerializer
+        return DepartementDetailSerializer
+    
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'category__entity']
-    search_fields = ['code', 'name', 'category__name']
+    filterset_fields = ['departement', 'departement__entity']
+    search_fields = ['code', 'name', 'departement__name']
     ordering_fields = ['code', 'name']
 
     def get_serializer_class(self):
+        print(f"Action: {self.action}")
         if self.action == 'list':
             return ProductListSerializer
         elif self.action in ['create', 'update', 'partial_update']:

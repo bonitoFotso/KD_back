@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from document import consumers
 from .views import (
     EntityViewSet,
-    CategoryViewSet,
+    DepartementViewSet,
     ProductViewSet,
     OffreViewSet,
     ProformaViewSet,
@@ -20,7 +20,7 @@ router = DefaultRouter()
 
 # Enregistrement des routes
 router.register(r'entities', EntityViewSet, basename='entity')
-router.register(r'categories', CategoryViewSet, basename='category')
+router.register(r'departements', DepartementViewSet, basename='departement')
 router.register(r'products', ProductViewSet, basename='product')
 #router.register(r'offres', OffreViewSet, basename='offre')
 #router.register(r'proformas', ProformaViewSet, basename='proforma')

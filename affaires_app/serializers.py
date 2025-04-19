@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.utils.timezone import now
 from django.contrib.auth import get_user_model
-
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from factures_app.models import Facture
 
 from .models import Affaire
@@ -55,12 +55,11 @@ class FormationSerializer(serializers.ModelSerializer):
 class FactureSerializer(serializers.ModelSerializer):
     """Sérialiseur pour les factures liées à une affaire."""
     statut_display = serializers.CharField(source='get_statut_display', read_only=True)
-    client_nom = serializers.CharField(source='client.nom', read_only=True)
     
     class Meta:
         model = Facture
         fields = [
-            'id', 'reference', 'client', 'client_nom',
+            'id', 'reference',
             'montant_ht', 'montant_ttc', 'statut', 'statut_display',
             'date_creation', 'date_echeance'
         ]
@@ -109,15 +108,13 @@ class AffaireDetailSerializer(serializers.ModelSerializer):
     responsable = UserBasicSerializer(read_only=True)
     rapports = RapportSerializer(source='rapport_set', many=True, read_only=True)
     factures = FactureSerializer(source='facture_set', many=True, read_only=True)
-    montant_restant_a_facturer = serializers.DecimalField(
-        source='get_montant_restant_a_facturer',
-        max_digits=10, decimal_places=2, read_only=True
-    )
-    montant_restant_a_payer = serializers.DecimalField(
-        source='get_montant_restant_a_payer',
-        max_digits=10, decimal_places=2, read_only=True
-    )
+    
+    # Modify these two fields
+    montant_restant_a_facturer = serializers.SerializerMethodField()
+    montant_restant_a_payer = serializers.SerializerMethodField()
+    
     en_retard = serializers.SerializerMethodField()
+    
     class Meta:
         model = Affaire
         fields = [
@@ -131,7 +128,39 @@ class AffaireDetailSerializer(serializers.ModelSerializer):
             'rapports', 'factures',
             'montant_restant_a_facturer', 'montant_restant_a_payer'
         ]
-        
+    
+    def get_montant_restant_a_facturer(self, obj):
+        """Handle the montant_restant_a_facturer safely."""
+        try:
+            value = obj.get_montant_restant_a_facturer()
+            # If value is None, return 0
+            if value is None:
+                return Decimal('0.00')
+            # Ensure it's a Decimal
+            if not isinstance(value,Decimal):
+                value =Decimal(str(value))
+            # Quantize to 2 decimal places
+            return value.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        except (InvalidOperation, TypeError, ValueError):
+            # If any error occurs, return 0
+            return Decimal('0.00')
+    
+    def get_montant_restant_a_payer(self, obj):
+        """Handle the montant_restant_a_payer safely."""
+        try:
+            value = obj.get_montant_restant_a_payer()
+            # If value is None, return 0
+            if value is None:
+                return Decimal('0.00')
+            # Ensure it's a Decimal
+            if not isinstance(value,Decimal):
+                value =Decimal(str(value))
+            # Quantize to 2 decimal places
+            return value.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        except (InvalidOperation, TypeError, ValueError):
+            # If any error occurs, return 0
+            return Decimal('0.00')
+    
     def get_en_retard(self, obj):
         """Détermine si l'affaire est en retard."""
         if obj.statut == 'EN_COURS' and obj.date_fin_prevue and obj.date_fin_prevue < now():
