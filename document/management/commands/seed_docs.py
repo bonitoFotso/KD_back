@@ -1,23 +1,26 @@
 from django.core.management.base import BaseCommand
 from api.user.models import User
-from document.models import Entity, Category, Product
+from document.models import Entity, Departement, Product
+
 
 class Command(BaseCommand):
-    help = 'Seed initial data for documents application'
+    help = "Seed initial data for documents application"
 
     def handle(self, *args, **kwargs):
-        self.stdout.write('Starting data seeding...')
+        self.stdout.write("Starting data seeding...")
 
         try:
             # Création des entités
-            self.stdout.write('Creating entities...')
-            kes_inspections = Entity.objects.create(code="KIP", name="KES INSPECTIONS & PROJECTS")
+            self.stdout.write("Creating entities...")
+            kes_inspections = Entity.objects.create(
+                code="KIP", name="KES INSPECTIONS & PROJECTS"
+            )
             kes_energy = Entity.objects.create(code="KEC", name="KES ENERGY & CARBON")
             kes_sarl = Entity.objects.create(code="KES", name="KES SARL")
-            kes_ar = Entity.objects.create(code="KAR", name="KES AfriK Recycling")
+            kes_ar = Entity.objects.create(code="KAR", name="KES AFRIK RECYCLING")
 
             # Création des catégories pour KES INSPECTIONS & PROJECTS
-            self.stdout.write('Creating KES INSPECTIONS & PROJECTS categories...')
+            self.stdout.write("Creating KES INSPECTIONS & PROJECTS categories...")
             categories_kes = {
                 "INS": "INSPECTION",
                 "FOR": "FORMATION",
@@ -28,14 +31,12 @@ class Command(BaseCommand):
             }
             kes_categories = {}
             for code, name in categories_kes.items():
-                kes_categories[code] = Category.objects.create(
-                    code=code,
-                    name=name,
-                    entity=kes_inspections
+                kes_categories[code] = Departement.objects.create(
+                    code=code, name=name, entity=kes_inspections
                 )
 
             # Création des catégories pour KES ENERGY & CARBON
-            self.stdout.write('Creating KES ENERGY & CARBON categories...')
+            self.stdout.write("Creating KES ENERGY & CARBON categories...")
             categories_kec = {
                 "INS": "INSPECTION",
                 "FOR": "FORMATION",
@@ -43,14 +44,12 @@ class Command(BaseCommand):
             }
             kec_categories = {}
             for code, name in categories_kec.items():
-                kec_categories[code] = Category.objects.create(
-                    code=code,
-                    name=name,
-                    entity=kes_energy
+                kec_categories[code] = Departement.objects.create(
+                    code=code, name=name, entity=kes_energy
                 )
 
             # Création des produits pour KES INSPECTIONS & PROJECTS
-            self.stdout.write('Creating KES INSPECTIONS & PROJECTS products...')
+            self.stdout.write("Creating KES INSPECTIONS & PROJECTS products...")
             products_kes = [
                 # INSPECTION
                 ("INS", "VTE1", "Verification electrique"),
@@ -115,13 +114,13 @@ class Command(BaseCommand):
                 ("CTC", "VTE55", "Contrôle technique"),
                 ("CTC", "VTE56", "Etude"),
             ]
-            
+
             for category_code, code, name in products_kes:
-                category = kes_categories[category_code]
-                Product.objects.create(code=code, name=name, category=category)
+                departement = kes_categories[category_code]
+                Product.objects.create(code=code, name=name, departement=departement)
 
             # Création des produits pour KES ENERGY & CARBON
-            self.stdout.write('Creating KES ENERGY & CARBON products...')
+            self.stdout.write("Creating KES ENERGY & CARBON products...")
             products_kec = [
                 # INSPECTION
                 ("INS", "EC1", "Production"),
@@ -152,16 +151,15 @@ class Command(BaseCommand):
                 ("CAR", "EC24", "Inspection drone"),
                 ("CAR", "EC25", "Projets spéciaux"),
             ]
-            
-            for category_code, code, name in products_kec:
-                category = kec_categories[category_code]
-                Product.objects.create(code=code, name=name, category=category)
-                
-            
 
-            self.stdout.write(self.style.SUCCESS('Data seeding completed successfully!'))
+            for category_code, code, name in products_kec:
+                departement = kec_categories[category_code]
+                Product.objects.create(code=code, name=name, departement=departement)
+
+            self.stdout.write(
+                self.style.SUCCESS("Data seeding completed successfully!")
+            )
 
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Error during data seeding: {str(e)}'))
+            self.stdout.write(self.style.ERROR(f"Error during data seeding: {str(e)}"))
             raise e
-

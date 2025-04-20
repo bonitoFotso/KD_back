@@ -9,30 +9,119 @@ from client.models import Contact, Pays, Region, Ville, Client, Site
 class CameroonSeeder:
     def __init__(self):
         self.pays = None
-        
+
     @transaction.atomic
     def seed(self):
         self.seed_susers()
         self.seed_cameroon()
         self.seed_regions()
         self.seed_cities()
-        self.seed_sabc()
-        self.seed_companies()
-        self.seed_contacts()  # Ajout de la nouvelle méthode
-        
+        self.seed_users()
+        # self.seed_companies()
+        # self.seed_contacts()  # Ajout de la nouvelle méthode
+
     def seed_susers(self):
-        User.objects.create_superuser(email="r@r.com", password="2016", username="root")
-        print("✓ Superutilisateur créé")
-        
+        if not User.objects.filter(username="root").exists():
+            User.objects.create_superuser(
+                email="r@r.com", password="2016", username="root"
+            )
+            print("✓ Superutilisateur créé")
+        else:
+            print("✓ Superutilisateur existe déjà")
+
     def seed_cameroon(self):
-        self.pays = Pays.objects.create(
-            nom="Cameroun",
-            code_iso="CMR"
-        )
+        self.pays = Pays.objects.create(nom="Cameroun", code_iso="CMR")
         print("✓ Pays créé : Cameroun")
-        
-    
-        
+
+    def seed_users(self):
+        """Crée les utilisateurs avec leurs emails, noms d'utilisateur et mots de passe prédéfinis."""
+        # Définition des données utilisateurs avec mot de passe prédéfini "Kes@2023!"
+        users_data = [
+            {
+                "email": "alvin.jamfa@kes-africa.com",
+                "username": "alvin.jamfa",
+                "first_name": "Alvin",
+                "last_name": "Jamfa",
+                "password": "Kes@2023!",
+            },
+            {
+                "email": "adriane.njike@kes-africa.com",
+                "username": "adriane.njike",
+                "first_name": "Adriane",
+                "last_name": "Njike",
+                "password": "Kes@2023!",
+            },
+            {
+                "email": "jb.onomo@kes-africa.com",
+                "username": "jb.onomo",
+                "first_name": "Jean-Baptiste",
+                "last_name": "Onomo",
+                "password": "Kes@2023!",
+            },
+            {
+                "email": "patrick.essame@kes-africa.com",
+                "username": "patrick.essame",
+                "first_name": "Patrick",
+                "last_name": "Essame",
+                "password": "Kes@2023!",
+            },
+            {
+                "email": "helene.ndenga@kes-africa.com",
+                "username": "helene.ndenga",
+                "first_name": "Hélène",
+                "last_name": "Ndenga",
+                "password": "Kes@2023!",
+            },
+            {
+                "email": "emiliene.matip@kes-africa.com",
+                "username": "emiliene.matip",
+                "first_name": "Émilienne",
+                "last_name": "Matip",
+                "password": "Kes@2023!",
+            },
+            {
+                "email": "bonito.fotso@kes-africa.com",
+                "username": "bonito.fotso",
+                "first_name": "Bonito",
+                "last_name": "Fotso",
+                "password": "Kes@2023!",
+            },
+        ]
+        created_users = []
+        for user_data in users_data:
+            # Vérification si l'utilisateur existe déjà
+            if not User.objects.filter(username=user_data["username"]).exists():
+                # Création de l'utilisateur
+                user = User.objects.create_user(
+                    username=user_data["username"],
+                    email=user_data["email"],
+                    password=user_data["password"],
+                )
+                created_users.append(
+                    {
+                        "username": user.username,
+                        "email": user.email,
+                        "password": user_data["password"],
+                    }
+                )
+            else:
+                print(f"L'utilisateur {user_data['username']} existe déjà.")
+
+        # Affichage des informations des utilisateurs créés
+        if created_users:
+            print("Utilisateurs créés avec succès:")
+            print("=" * 80)
+            print(f"{'Nom d utilisateur':<20} {'Email':<35} {'Mot de passe':<15} ")
+            print("-" * 80)
+            for user in created_users:
+                print(
+                    f"{user['username']:<20} {user['email']:<35} {user['password']:<15} "
+                )
+        else:
+            print("Aucun nouvel utilisateur n'a été créé.")
+
+        return created_users
+
     def seed_regions(self):
         regions_data = [
             "Adamaoua",
@@ -44,18 +133,15 @@ class CameroonSeeder:
             "Nord-Ouest",
             "Ouest",
             "Sud",
-            "Sud-Ouest"
+            "Sud-Ouest",
         ]
-        
+
         self.regions = {}
         for region_name in regions_data:
-            region = Region.objects.create(
-                nom=region_name,
-                pays=self.pays
-            )
+            region = Region.objects.create(nom=region_name, pays=self.pays)
             self.regions[region_name] = region
         print("✓ 10 régions créées")
-        
+
     def seed_cities(self):
         cities_data = {
             "Adamaoua": ["Ngaoundéré", "Meiganga", "Tibati", "Banyo"],
@@ -67,20 +153,17 @@ class CameroonSeeder:
             "Nord-Ouest": ["Bamenda", "Kumbo", "Nkambé", "Wum"],
             "Ouest": ["Bafoussam", "Dschang", "Mbouda", "Bafang"],
             "Sud": ["Ebolowa", "Kribi", "Sangmélima", "Ambam"],
-            "Sud-Ouest": ["Buéa", "Limbé", "Kumba", "Tiko"]
+            "Sud-Ouest": ["Buéa", "Limbé", "Kumba", "Tiko"],
         }
-        
+
         self.villes = {}
         for region_name, cities in cities_data.items():
             region = self.regions[region_name]
             for city_name in cities:
-                ville = Ville.objects.create(
-                    nom=city_name,
-                    region=region
-                )
+                ville = Ville.objects.create(nom=city_name, region=region)
                 self.villes[city_name] = ville
         print("✓ 40 villes créées")
-        
+
     def seed_sabc(self):
         # Création du client SABC
         sabc = Client.objects.create(
@@ -95,48 +178,48 @@ class CameroonSeeder:
             matricule="M0392847365",
             agreer=False,
             agreement_fournisseur=False,
-            entite=""
+            entite="",
         )
         print("✓ Client SABC créé")
-        
+
         # Création des sites SABC dans différentes villes
         sites_data = [
             {
                 "ville": "Douala",
                 "nom": "Siège Social SABC",
                 "localisation": "76 Rue Prince Bell, Bonanjo",
-                "description": "Siège social et site de production principal"
+                "description": "Siège social et site de production principal",
             },
             {
                 "ville": "Yaoundé",
                 "nom": "SABC Yaoundé",
                 "localisation": "Zone Industrielle Mvan",
-                "description": "Site de production et distribution"
+                "description": "Site de production et distribution",
             },
             {
                 "ville": "Garoua",
                 "nom": "SABC Garoua",
                 "localisation": "Zone Industrielle",
-                "description": "Centre de distribution régional Nord"
+                "description": "Centre de distribution régional Nord",
             },
             {
                 "ville": "Bafoussam",
                 "nom": "SABC Bafoussam",
                 "localisation": "Quartier Industriel",
-                "description": "Centre de distribution régional Ouest"
-            }
+                "description": "Centre de distribution régional Ouest",
+            },
         ]
-        
+
         for site_data in sites_data:
             Site.objects.create(
                 nom=site_data["nom"],
                 client=sabc,
                 localisation=site_data["localisation"],
                 description=site_data["description"],
-                ville=self.villes[site_data["ville"]]
+                ville=self.villes[site_data["ville"]],
             )
         print("✓ 4 sites SABC créés")
-        
+
     # seeders.py
     def seed_companies(self):
         # SCDP (Société Camerounaise des Dépôts Pétroliers)
@@ -152,39 +235,39 @@ class CameroonSeeder:
             matricule="M123456789",
             agreer=False,
             agreement_fournisseur=False,
-            entite=""
+            entite="",
         )
-        
+
         scdp_sites = [
             {
                 "ville": "Douala",
                 "nom": "SCDP Douala",
                 "localisation": "Zone Portuaire",
-                "description": "Dépôt principal et siège social"
+                "description": "Dépôt principal et siège social",
             },
             {
                 "ville": "Yaoundé",
                 "nom": "SCDP Yaoundé",
                 "localisation": "Nsam",
-                "description": "Dépôt régional Centre"
+                "description": "Dépôt régional Centre",
             },
             {
                 "ville": "Garoua",
                 "nom": "SCDP Garoua",
                 "localisation": "Zone Industrielle",
-                "description": "Dépôt régional Nord"
-            }
+                "description": "Dépôt régional Nord",
+            },
         ]
-        
+
         for site_data in scdp_sites:
             Site.objects.create(
                 nom=site_data["nom"],
                 client=scdp,
                 localisation=site_data["localisation"],
                 description=site_data["description"],
-                ville=self.villes[site_data["ville"]]
+                ville=self.villes[site_data["ville"]],
             )
-        
+
         # CIMENCAM (Cimenteries du Cameroun)
         cimencam = Client.objects.create(
             nom="CIMENCAM",
@@ -198,39 +281,39 @@ class CameroonSeeder:
             matricule="M987654321",
             agreer=False,
             agreement_fournisseur=False,
-            entite=""
+            entite="",
         )
-        
+
         cimencam_sites = [
             {
                 "ville": "Douala",
                 "nom": "CIMENCAM Bonabéri",
                 "localisation": "Zone Industrielle Bonabéri",
-                "description": "Usine de production principale"
+                "description": "Usine de production principale",
             },
             {
                 "ville": "Yaoundé",
                 "nom": "CIMENCAM Nomayos",
                 "localisation": "Nomayos",
-                "description": "Centre de broyage"
+                "description": "Centre de broyage",
             },
             {
                 "ville": "Garoua",
                 "nom": "CIMENCAM Figuil",
                 "localisation": "Figuil",
-                "description": "Usine de production Nord"
-            }
+                "description": "Usine de production Nord",
+            },
         ]
-        
+
         for site_data in cimencam_sites:
             Site.objects.create(
                 nom=site_data["nom"],
                 client=cimencam,
                 localisation=site_data["localisation"],
                 description=site_data["description"],
-                ville=self.villes[site_data["ville"]]
+                ville=self.villes[site_data["ville"]],
             )
-        
+
         # BROLI
         broli = Client.objects.create(
             nom="BROLI",
@@ -244,33 +327,33 @@ class CameroonSeeder:
             matricule="M456789123",
             agreer=False,
             agreement_fournisseur=False,
-            entite=""
+            entite="",
         )
-        
+
         broli_sites = [
             {
                 "ville": "Douala",
                 "nom": "BROLI Production",
                 "localisation": "Zone Industrielle",
-                "description": "Site de production principal"
+                "description": "Site de production principal",
             },
             {
                 "ville": "Yaoundé",
                 "nom": "BROLI Distribution Centre",
                 "localisation": "Quartier Industriel",
-                "description": "Centre de distribution"
-            }
+                "description": "Centre de distribution",
+            },
         ]
-        
+
         for site_data in broli_sites:
             Site.objects.create(
                 nom=site_data["nom"],
                 client=broli,
                 localisation=site_data["localisation"],
                 description=site_data["description"],
-                ville=self.villes[site_data["ville"]]
+                ville=self.villes[site_data["ville"]],
             )
-        
+
         # BOCOM
         bocom = Client.objects.create(
             nom="BOCOM",
@@ -284,33 +367,33 @@ class CameroonSeeder:
             matricule="M789123456",
             agreer=False,
             agreement_fournisseur=False,
-            entite=""
+            entite="",
         )
-        
+
         bocom_sites = [
             {
                 "ville": "Douala",
                 "nom": "BOCOM Siège",
                 "localisation": "Quartier Bali",
-                "description": "Siège social et entrepôt principal"
+                "description": "Siège social et entrepôt principal",
             },
             {
                 "ville": "Yaoundé",
                 "nom": "BOCOM Yaoundé",
                 "localisation": "Centre ville",
-                "description": "Bureau régional et entrepôt"
-            }
+                "description": "Bureau régional et entrepôt",
+            },
         ]
-        
+
         for site_data in bocom_sites:
             Site.objects.create(
                 nom=site_data["nom"],
                 client=bocom,
                 localisation=site_data["localisation"],
                 description=site_data["description"],
-                ville=self.villes[site_data["ville"]]
+                ville=self.villes[site_data["ville"]],
             )
-        
+
         # AGL
         agl = Client.objects.create(
             nom="AGL",
@@ -324,39 +407,39 @@ class CameroonSeeder:
             matricule="M321654987",
             agreer=False,
             agreement_fournisseur=False,
-            entite=""
+            entite="",
         )
-        
+
         agl_sites = [
             {
                 "ville": "Douala",
                 "nom": "AGL Centre Emplissage",
                 "localisation": "Bonabéri",
-                "description": "Centre d'emplissage principal"
+                "description": "Centre d'emplissage principal",
             },
             {
                 "ville": "Yaoundé",
                 "nom": "AGL Distribution",
                 "localisation": "Quartier Industriel",
-                "description": "Centre de distribution"
+                "description": "Centre de distribution",
             },
             {
                 "ville": "Bafoussam",
                 "nom": "AGL Ouest",
                 "localisation": "Zone Industrielle",
-                "description": "Dépôt régional"
-            }
+                "description": "Dépôt régional",
+            },
         ]
-        
+
         for site_data in agl_sites:
             Site.objects.create(
                 nom=site_data["nom"],
                 client=agl,
                 localisation=site_data["localisation"],
                 description=site_data["description"],
-                ville=self.villes[site_data["ville"]]
+                ville=self.villes[site_data["ville"]],
             )
-        
+
         # SIKA Cameroun
         sika = Client.objects.create(
             nom="SIKA Cameroun",
@@ -370,35 +453,35 @@ class CameroonSeeder:
             matricule="M147258369",
             agreer=False,
             agreement_fournisseur=False,
-            entite=""
+            entite="",
         )
-        
+
         sika_sites = [
             {
                 "ville": "Douala",
                 "nom": "SIKA Production",
                 "localisation": "Zone Industrielle",
-                "description": "Usine de production"
+                "description": "Usine de production",
             },
             {
                 "ville": "Yaoundé",
                 "nom": "SIKA Centre",
                 "localisation": "Quartier Industriel",
-                "description": "Centre de distribution"
-            }
+                "description": "Centre de distribution",
+            },
         ]
-        
+
         for site_data in sika_sites:
             Site.objects.create(
                 nom=site_data["nom"],
                 client=sika,
                 localisation=site_data["localisation"],
                 description=site_data["description"],
-                ville=self.villes[site_data["ville"]]
+                ville=self.villes[site_data["ville"]],
             )
-            
+
         print("✓ 7 entreprises majeures créées avec leurs sites")
-        
+
     def seed_contacts(self):
         # SABC Contacts
         Contact.objects.create(
@@ -410,11 +493,13 @@ class CameroonSeeder:
             poste="Directeur des Achats",
             service="Direction des Achats",
             role_achat="Directeur",
-            client=Client.objects.get(nom__contains="Société Anonyme des Brasseries du Cameroun"),
+            client=Client.objects.get(
+                nom__contains="Société Anonyme des Brasseries du Cameroun"
+            ),
             ville=self.villes["Douala"],
             quartier="Bonanjo",
             bp="BP 4036",
-            notes="Contact principal pour les appels d'offres"
+            notes="Contact principal pour les appels d'offres",
         )
 
         Contact.objects.create(
@@ -426,10 +511,12 @@ class CameroonSeeder:
             poste="Responsable Approvisionnement",
             service="Approvisionnement",
             role_achat="Approbateur",
-            client=Client.objects.get(nom__contains="Société Anonyme des Brasseries du Cameroun"),
+            client=Client.objects.get(
+                nom__contains="Société Anonyme des Brasseries du Cameroun"
+            ),
             ville=self.villes["Douala"],
             quartier="Bonanjo",
-            bp="BP 4036"
+            bp="BP 4036",
         )
 
         # SCDP Contacts
@@ -442,9 +529,11 @@ class CameroonSeeder:
             poste="Chef Service Achats",
             service="Service Achats",
             role_achat="Validation technique",
-            client=Client.objects.get(nom__contains="Société Camerounaise des Dépôts Pétroliers"),
+            client=Client.objects.get(
+                nom__contains="Société Camerounaise des Dépôts Pétroliers"
+            ),
             ville=self.villes["Douala"],
-            quartier="Bonanjo"
+            quartier="Bonanjo",
         )
 
         Contact.objects.create(
@@ -456,9 +545,11 @@ class CameroonSeeder:
             poste="Responsable Logistique",
             service="Logistique",
             role_achat="Émetteur des bons de commande",
-            client=Client.objects.get(nom__contains="Société Camerounaise des Dépôts Pétroliers"),
+            client=Client.objects.get(
+                nom__contains="Société Camerounaise des Dépôts Pétroliers"
+            ),
             ville=self.villes["Douala"],
-            quartier="Bonanjo"
+            quartier="Bonanjo",
         )
 
         # CIMENCAM Contacts
@@ -473,7 +564,7 @@ class CameroonSeeder:
             role_achat="Directeur",
             client=Client.objects.get(nom__contains="CIMENCAM"),
             ville=self.villes["Douala"],
-            quartier="Bonaberi"
+            quartier="Bonaberi",
         )
 
         Contact.objects.create(
@@ -487,7 +578,7 @@ class CameroonSeeder:
             role_achat="Acheteur",
             client=Client.objects.get(nom__contains="CIMENCAM"),
             ville=self.villes["Douala"],
-            quartier="Bonaberi"
+            quartier="Bonaberi",
         )
 
         # BROLI Contacts
@@ -501,7 +592,7 @@ class CameroonSeeder:
             service="Achats",
             role_achat="Responsable",
             client=Client.objects.get(nom__contains="BROLI"),
-            ville=self.villes["Douala"]
+            ville=self.villes["Douala"],
         )
 
         Contact.objects.create(
@@ -514,7 +605,7 @@ class CameroonSeeder:
             service="Achats",
             role_achat="Acheteur",
             client=Client.objects.get(nom__contains="BROLI"),
-            ville=self.villes["Douala"]
+            ville=self.villes["Douala"],
         )
 
         # BOCOM Contacts
@@ -528,7 +619,7 @@ class CameroonSeeder:
             service="Commercial",
             role_achat="Approbateur final",
             client=Client.objects.get(nom__contains="BOCOM"),
-            ville=self.villes["Douala"]
+            ville=self.villes["Douala"],
         )
 
         Contact.objects.create(
@@ -541,7 +632,7 @@ class CameroonSeeder:
             service="Approvisionnement",
             role_achat="Gestionnaire des commandes",
             client=Client.objects.get(nom__contains="BOCOM"),
-            ville=self.villes["Douala"]
+            ville=self.villes["Douala"],
         )
 
         # AGL Contacts
@@ -555,7 +646,7 @@ class CameroonSeeder:
             service="Supply Chain",
             role_achat="Superviseur",
             client=Client.objects.get(nom__contains="AGL"),
-            ville=self.villes["Douala"]
+            ville=self.villes["Douala"],
         )
 
         Contact.objects.create(
@@ -568,7 +659,7 @@ class CameroonSeeder:
             service="Achats",
             role_achat="Acheteuse",
             client=Client.objects.get(nom__contains="AGL"),
-            ville=self.villes["Douala"]
+            ville=self.villes["Douala"],
         )
 
         # SIKA Contacts
@@ -582,7 +673,7 @@ class CameroonSeeder:
             service="Direction des Opérations",
             role_achat="Directeur",
             client=Client.objects.get(nom__contains="SIKA Cameroun"),
-            ville=self.villes["Douala"]
+            ville=self.villes["Douala"],
         )
 
         Contact.objects.create(
@@ -595,25 +686,25 @@ class CameroonSeeder:
             service="Achats",
             role_achat="Responsable",
             client=Client.objects.get(nom__contains="SIKA Cameroun"),
-            ville=self.villes["Douala"]
+            ville=self.villes["Douala"],
         )
 
         print("✓ Contacts créés pour toutes les entreprises")
 
 
-
-
 # Management command
 from django.core.management.base import BaseCommand
 
+
 class Command(BaseCommand):
-    help = 'Seed the database with Cameroon data'
+    help = "Seed the database with Cameroon data"
 
     def handle(self, *args, **options):
-        self.stdout.write('Début du seeding...')
+        self.stdout.write("Début du seeding...")
         seeder = CameroonSeeder()
         seeder.seed()
-        self.stdout.write(self.style.SUCCESS('Seeding terminé avec succès !'))
+        self.stdout.write(self.style.SUCCESS("Seeding terminé avec succès !"))
+
 
 # Pour l'utiliser, créez un fichier management/commands/seed_cameroon.py
 # puis exécutez : python manage.py seed_cameroon
