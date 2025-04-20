@@ -36,8 +36,8 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 media/
-static/
-staticfiles/
+#static/
+#staticfiles/
 
 # Si vous utilisez PostgreSQL
 *.psql
@@ -72,8 +72,8 @@ coverage.xml
 .pytest_cache/
 
 # Fichiers de migration générés par DRF/Django
-**/migrations/*.py
-!**/migrations/__init__.py
+#**/migrations/*.py
+#!**/migrations/__init__.py
 
 # Fichiers de journalisation
 logs/
