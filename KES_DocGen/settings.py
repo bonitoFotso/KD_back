@@ -104,7 +104,7 @@ ASGI_APPLICATION = "KES_DocGen.asgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-IN_DOCKER = os.environ.get('IN_DOCKER', False)
+IN_DOCKER = os.environ.get('IN_DOCKER', '') == 'True'
 
 # Configuration de la base de données
 if IN_DOCKER:
@@ -127,7 +127,9 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-
+# Ajoutez temporairement ce code pour déboguer
+print(f"IN_DOCKER = {IN_DOCKER}")
+print(f"DATABASES = {DATABASES}")
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
