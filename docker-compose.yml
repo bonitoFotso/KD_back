@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # Service PostgreSQL
+  db:
+    image: postgres:14
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./.env
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+    restart: always
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Service Web Django
+  web:
+    build: .
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8000
+             #gunicorn kd_back.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/mediafiles
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./.env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+
+  # Service Nginx pour servir les fichiers statiques et faire office de reverse proxy
+  nginx:
+    image: nginx:1.21
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - static_volume:/var/www/static
+      - media_volume:/var/www/media
+    depends_on:
+      - web
+    restart: always
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
