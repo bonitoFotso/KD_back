@@ -12,7 +12,7 @@ then
     echo "PostgreSQL démarré"
 fi
 
-# Si vous avez besoin de charger des données initiales ffdfd gfgf
+# Si vous avez besoin de charger des données initiales ffdfd gfgf fd
 echo "Chargement des données initiales..."
 python manage.py seed_client
 python manage.py seed_docs
